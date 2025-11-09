@@ -13,8 +13,11 @@ WORKDIR /app
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
+# Install turbo globally
+RUN pnpm add -g turbo
+
 COPY . .
-RUN turbo prune backend --docker
+RUN turbo prune api --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
@@ -41,7 +44,7 @@ COPY --from=builder /app/out/full/ .
 # ARG TURBO_TOKEN
 # ENV TURBO_TOKEN=$TURBO_TOKEN
 
-RUN pnpm turbo build --filter=backend
+RUN pnpm turbo build --filter=api
 
 FROM base AS runner
 WORKDIR /app
@@ -59,6 +62,7 @@ COPY --from=installer /app .
 
 WORKDIR /app/apps/backend
 
-RUN yarn db:migrate
+# Don't run migrations in Dockerfile - run them as a separate Railway deployment
+# RUN pnpm db:migrate
 
-CMD ["yarn", "start"]
+CMD ["pnpm", "start"]
