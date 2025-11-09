@@ -13,11 +13,15 @@ WORKDIR /app
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Install turbo globally
-RUN pnpm add -g turbo
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages ./packages
+COPY apps/backend/package.json ./apps/backend/
+
+# Install dependencies to get turbo
+RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN turbo prune api --docker
+RUN pnpm turbo prune api --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
